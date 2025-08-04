@@ -44,9 +44,7 @@ jobs:
         
         # List of your notebooks to sync (replace with actual paths)
         notebooks=(
-          "yourusername/notebook-1"
-          "yourusername/notebook-2"
-          "yourusername/data-analysis-project"
+          "amrutaginil/notebooka02bf62f9c"
         )
         
         for notebook in "${notebooks[@]}"; do
