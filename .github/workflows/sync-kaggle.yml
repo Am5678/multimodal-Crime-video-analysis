@@ -1,0 +1,75 @@
+name: Sync Kaggle Notebooks
+
+on:
+  schedule:
+    # Run daily at 2 AM UTC
+    - cron: '0 2 * * *'
+  workflow_dispatch: # Allow manual trigger
+  push:
+    branches: [ main ]
+
+jobs:
+  sync-notebooks:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.9'
+        
+    - name: Install dependencies
+      run: |
+        pip install kaggle requests
+        
+    - name: Configure Kaggle API
+      run: |
+        mkdir -p ~/.kaggle
+        echo '{"username":"${{ secrets.KAGGLE_USERNAME }}","key":"${{ secrets.KAGGLE_KEY }}"}' > ~/.kaggle/kaggle.json
+        chmod 600 ~/.kaggle/kaggle.json
+        
+    - name: Download specific notebook
+      run: |
+        # Replace with your actual Kaggle notebook path
+        # Format: username/notebook-name
+        kaggle kernels pull yourusername/your-notebook-name -p ./notebooks/
+        
+    - name: Download multiple notebooks (optional)
+      run: |
+        # Create notebooks directory
+        mkdir -p notebooks
+        
+        # List of your notebooks to sync (replace with actual paths)
+        notebooks=(
+          "yourusername/notebook-1"
+          "yourusername/notebook-2"
+          "yourusername/data-analysis-project"
+        )
+        
+        for notebook in "${notebooks[@]}"; do
+          echo "Downloading $notebook"
+          kaggle kernels pull "$notebook" -p "./notebooks/$(basename "$notebook")/"
+        done
+        
+    - name: Download datasets (optional)
+      run: |
+        mkdir -p datasets
+        # Replace with your dataset paths
+        kaggle datasets download yourusername/your-dataset -p ./datasets/ --unzip
+        
+    - name: Commit and push changes
+      run: |
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+        git add .
+        
+        # Check if there are changes to commit
+        if git diff --staged --quiet; then
+          echo "No changes to commit"
+        else
+          git commit -m "Auto-sync Kaggle notebooks - $(date)"
+          git push
+        fi
